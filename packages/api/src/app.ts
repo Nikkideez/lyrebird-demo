@@ -8,6 +8,7 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import {
   serializerCompiler,
   validatorCompiler,
+  jsonSchemaTransform,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { authPlugin } from "./middleware/auth.js";
@@ -31,6 +32,7 @@ export async function buildApp(db: DB) {
         version: "1.0.0",
       },
     },
+    transform: jsonSchemaTransform,
   });
 
   await app.register(fastifySwaggerUi, { routePrefix: "/docs" });
