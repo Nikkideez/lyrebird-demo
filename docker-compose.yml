@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - db-data:/data
+    environment:
+      - DB_PATH=/data/clinic.db
+      - PORT=3000
+
+volumes:
+  db-data:
