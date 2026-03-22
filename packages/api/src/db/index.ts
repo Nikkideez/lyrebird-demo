@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { type BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema.js";
 
 const DB_PATH = process.env.DB_PATH || "clinic.db";
@@ -31,5 +31,5 @@ sqlite.exec(`
   );
 `);
 
-export const db = drizzle(sqlite, { schema });
+export const db: BetterSQLite3Database<typeof schema> = drizzle(sqlite, { schema });
 export type DB = typeof db;

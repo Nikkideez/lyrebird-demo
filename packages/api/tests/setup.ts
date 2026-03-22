@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { type BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "../src/db/schema.js";
 import { buildApp } from "../src/app.js";
 
@@ -30,11 +30,11 @@ export async function createTestApp() {
     );
   `);
 
-  const db = drizzle(sqlite, { schema });
+  const db: BetterSQLite3Database<typeof schema> = drizzle(sqlite, { schema });
   const app = await buildApp(db);
   await app.ready();
 
-  return { app, db, sqlite };
+  return { app, db };
 }
 
 /** Returns an ISO datetime string N hours from now */
