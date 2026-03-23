@@ -31,5 +31,20 @@ sqlite.exec(`
   );
 `);
 
+// Seed sample data if tables are empty
+const count = sqlite.prepare("SELECT COUNT(*) as n FROM clinicians").get() as { n: number };
+if (count.n === 0) {
+  sqlite.exec(`
+    INSERT INTO clinicians (id, name, specialty) VALUES
+      ('c1', 'Dr. Sarah Chen', 'General Practice'),
+      ('c2', 'Dr. James Wilson', 'Cardiology'),
+      ('c3', 'Dr. Emily Park', 'Dermatology');
+    INSERT INTO patients (id, name, email) VALUES
+      ('p1', 'Alice Johnson', 'alice@example.com'),
+      ('p2', 'Bob Smith', 'bob@example.com'),
+      ('p3', 'Carol Davis', 'carol@example.com');
+  `);
+}
+
 export const db: BetterSQLite3Database<typeof schema> = drizzle(sqlite, { schema });
 export type DB = typeof db;

@@ -153,6 +153,21 @@ export class AppointmentService {
       .all();
   }
 
+  deleteById(id: string) {
+    const existing = this.db
+      .select()
+      .from(appointments)
+      .where(eq(appointments.id, id))
+      .get();
+
+    if (!existing) {
+      return { found: false } as const;
+    }
+
+    this.db.delete(appointments).where(eq(appointments.id, id)).run();
+    return { found: true, appointment: existing } as const;
+  }
+
   getClinicianById(id: string) {
     return this.db
       .select()

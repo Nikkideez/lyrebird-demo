@@ -4,6 +4,13 @@ import { requireRole } from "../middleware/auth.js";
 import { AppointmentService } from "../services/appointment.service.js";
 import type { DB } from "../db/index.js";
 
+const RoleHeader = z.object({
+  "x-role": z
+    .enum(["patient", "clinician", "admin"])
+    .optional()
+    .describe("Simulated auth role (default: patient)"),
+});
+
 const CreateAppointmentSchema = z.object({
   clinicianId: z.string().min(1),
   patientId: z.string().min(1),
@@ -32,6 +39,7 @@ export function appointmentRoutes(app: FastifyInstance, db: DB) {
       schema: {
         description: "Create a new appointment",
         tags: ["Appointments"],
+        headers: RoleHeader,
         body: CreateAppointmentSchema,
         response: {
           201: z.object({
@@ -100,12 +108,50 @@ export function appointmentRoutes(app: FastifyInstance, db: DB) {
       schema: {
         description: "List all appointments (admin only)",
         tags: ["Appointments"],
+        headers: RoleHeader,
         querystring: ListAppointmentsQuery,
       },
     },
     async (request) => {
       const query = request.query as z.infer<typeof ListAppointmentsQuery>;
       return service.listAll(query);
+    }
+  );
+
+  // DELETE /appointments/:id (admin only)
+  app.delete(
+    "/appointments/:id",
+    {
+      preHandler: requireRole("admin"),
+      schema: {
+        description: "Delete an appointment by ID (admin only)",
+        tags: ["Appointments"],
+        headers: RoleHeader,
+        params: z.object({ id: z.string().min(1) }),
+        response: {
+          200: z.object({
+            id: z.string(),
+            clinicianId: z.string(),
+            patientId: z.string(),
+            start: z.string(),
+            end: z.string(),
+          }),
+          404: z.object({ error: z.string(), message: z.string() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const result = service.deleteById(id);
+
+      if (!result.found) {
+        return reply.code(404).send({
+          error: "Not Found",
+          message: `Appointment '${id}' not found`,
+        });
+      }
+
+      return reply.code(200).send(result.appointment);
     }
   );
 

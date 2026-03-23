@@ -310,6 +310,63 @@ describe("Appointments API", () => {
     });
   });
 
+  describe("DELETE /appointments/:id", () => {
+    it("deletes an appointment successfully", async () => {
+      const createRes = await app.inject({
+        method: "POST",
+        url: "/appointments",
+        headers: { "x-role": "patient" },
+        payload: {
+          clinicianId: "c1",
+          patientId: "p1",
+          start: futureDate(1),
+          end: futureDate(2),
+        },
+      });
+      const { id } = JSON.parse(createRes.body);
+
+      const deleteRes = await app.inject({
+        method: "DELETE",
+        url: `/appointments/${id}`,
+        headers: { "x-role": "admin" },
+      });
+
+      expect(deleteRes.statusCode).toBe(200);
+      const body = JSON.parse(deleteRes.body);
+      expect(body.id).toBe(id);
+      expect(body.clinicianId).toBe("c1");
+
+      // Verify it's actually gone
+      const listRes = await app.inject({
+        method: "GET",
+        url: "/appointments",
+        headers: { "x-role": "admin" },
+      });
+      const appointments = JSON.parse(listRes.body);
+      expect(appointments.find((a: any) => a.id === id)).toBeUndefined();
+    });
+
+    it("returns 404 for unknown appointment", async () => {
+      const res = await app.inject({
+        method: "DELETE",
+        url: "/appointments/nonexistent",
+        headers: { "x-role": "admin" },
+      });
+
+      expect(res.statusCode).toBe(404);
+    });
+
+    it("rejects non-admin roles (403)", async () => {
+      const res = await app.inject({
+        method: "DELETE",
+        url: "/appointments/some-id",
+        headers: { "x-role": "patient" },
+      });
+
+      expect(res.statusCode).toBe(403);
+    });
+  });
+
   describe("Concurrency safety", () => {
     it("rejects concurrent overlapping bookings", async () => {
       const start = futureDate(20);

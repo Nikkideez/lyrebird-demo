@@ -38,11 +38,22 @@ export async function buildApp(db: DB) {
   await app.register(fastifySwaggerUi, { routePrefix: "/docs" });
 
   authPlugin(app);
-  appointmentRoutes(app, db);
-  clinicianRoutes(app, db);
 
-  // Health check
-  app.get("/health", async () => ({ status: "ok" }));
+  // Register API routes under /api prefix for Docker (frontend uses /api/*)
+  // Also register at root for direct API access and backwards compatibility
+  const registerRoutes = (instance: typeof app) => {
+    appointmentRoutes(instance, db);
+    clinicianRoutes(instance, db);
+    instance.get("/health", async () => ({ status: "ok" }));
+  };
+
+  await app.register(
+    async (api) => {
+      registerRoutes(api);
+    },
+    { prefix: "/api" }
+  );
+  registerRoutes(app);
 
   // Serve frontend static assets in production
   const webDist = path.resolve(process.cwd(), "public");

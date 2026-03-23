@@ -4,6 +4,17 @@ import { requireRole } from "../middleware/auth.js";
 import { AppointmentService } from "../services/appointment.service.js";
 import type { DB } from "../db/index.js";
 
+const RoleHeader = z.object({
+  "x-role": z
+    .enum(["patient", "clinician", "admin"])
+    .optional()
+    .describe("Simulated auth role (default: patient)"),
+  "x-clinician-id": z
+    .string()
+    .optional()
+    .describe("Clinician ID for own-schedule enforcement"),
+});
+
 const ClinicianAppointmentsQuery = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
@@ -24,6 +35,7 @@ export function clinicianRoutes(app: FastifyInstance, db: DB) {
       schema: {
         description: "Get appointments for a specific clinician",
         tags: ["Clinicians"],
+        headers: RoleHeader,
         params: ClinicianParams,
         querystring: ClinicianAppointmentsQuery,
       },
